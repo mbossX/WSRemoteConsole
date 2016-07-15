@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, max-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>WebSocket Client</title>
+    <!--link href="http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet"-->
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+        
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #24353a;
+        }
+        
+        #login {
+            width: 80%;
+            height: 270px;
+            max-width: 320px;
+            min-width: 240px;
+            background-color: #1d2223;
+            margin: auto auto;
+            padding: 20px 0 20px 0;
+            border-radius: 15px;
+            transition: all 0.5s;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+        }
+        
+        #login.fade {
+            opacity=0;
+        }
+        
+        #login span {
+            width: 100%;
+            text-align: center;
+            display: block;
+            font-size: 1.5em;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        #login input {
+            color: #666;
+            display: block;
+            padding: 5px 8px;
+            margin: 8px auto;
+            width: 75%;
+        }
+        
+        #login input[type='submit'] {
+            border: none;
+            background-color: #25a1c5;
+            padding: 8px;
+            color: white;
+            cursor: pointer;
+        }
+        
+        #main {
+            height: 100%;
+            position: relative;
+            max-width: 100%;
+            min-width: 50%;
+            width: 640px;
+            margin: 0 auto;
+            transition: all 0.5s;
+        }
+        
+        .header {
+            height: 44px;
+            line-height: 44px;
+            display: block;
+            background-color: #151515;
+            margin: 0;
+            color: #DDD;
+            text-align: center;
+            border-bottom: 2px solid #666;
+        }
+        
+        #output {
+            position: absolute;
+            overflow-y: scroll;
+            background-color: #0a0a0a;
+            color: #FFF;
+            top: 44px;
+            bottom: 30px;
+            width: 100%;
+            padding-bottom: 20px;
+            padding-top: 10px;
+        }
+        
+        #output p {
+            -webkit-margin-before: 0em;
+            -webkit-margin-after: 0em;
+            padding: 2px 10px;
+        }
+        
+        #input {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            line-height: 36px;
+            display: block;
+            width: 100%;
+            padding-left: 6px;
+            z-index: 20000;
+            -webkit-appearance: none;
+            border-radius: 0;
+        }
+        
+        #send {
+            position: absolute;
+            bottom: 38px;
+            top: auto;
+            right: 24px;
+            height: 44px;
+            width: 44px;
+            background-color: rgba(255, 255, 255, 0.77);
+            border: navajowhite;
+            border-radius: 6px;
+            color: #3a3a3a;
+            opacity: 0.6;
+            transition: all 0.5s;
+            cursor: pointer;
+            font-size: 1.4em;
+            padding: 0;
+        }
+        
+        #send:hover {
+            opacity: 1;
+        }
+        
+        #logout {
+            position: absolute;
+            top: 4px;
+            bottom: auto;
+            right: 4px;
+            height: 34px;
+            line-height: 34px;
+            width: 34px;
+            background-color: #151515;
+            border: navajowhite;
+            border-radius: 6px;
+            color: #ffffff;
+            opacity: 0.6;
+            transition: all 0.5s;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        #logout:hover {
+            opacity: 1;
+        }
+        
+        .logout {
+            height: 40px;
+            width: 40px;
+            display: block;
+            position: relative;
+            text-align: center
+        }
+        
+        .logout:before,
+        .logout:after {
+            content: '';
+            height: 4px;
+            width: 20px;
+            display: block;
+            background: #fff;
+            position: absolute;
+            top: 15px;
+            left: 7px;
+            transform: rotate(-45deg);
+            -webkit-transform: rotate(-45deg);
+            -moz-transform: rotate(-45deg);
+            -o-transform: rotate(-45deg);
+            -ms-transform: rotate(-45deg);
+        }
+        
+        .logout:after {
+            transform: rotate(45deg);
+            -webkit-transform: rotate(45deg);
+            -moz-transform: rotate(45deg);
+            -o-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+        }
+        
+        .clear {
+            width: 40px;
+            height: 40px;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .clear:before {
+            content: '';
+            height: 6px;
+            width: 4px;
+            display: block;
+            position: absolute;
+            top: 20px;
+            left: 14px;
+            border: solid #333;
+            border-width: 3px 6px 1px 6px;
+        }
+        
+        .clear:after {
+            content: '';
+            height: 0px;
+            width: 0px;
+            display: block;
+            position: absolute;
+            top: 13px;
+            left: 8px;
+            border: 6px transparent solid;
+            border-width: 0 14px 6px;
+            border-bottom-color: #333;
+        }
+    </style>
+</head>
+
+<body class="container" onclick="input.focus()">
+    <div id="main">
+        <div class="header">WebSocket Remote Console Client</div>
+        <div id="output"></div>
+        <input id="input" type="text" autofocus placeholder=":/输入命令" onkeydown="if(event.keyCode==40){NextCommand(event)};if(event.keyCode==38){PreCommand(event)};if(event.keyCode==13) {Send();return false;}">
+        <button id="send" class="clear" onclick="Clear()"></button>
+        <button id="logout" class="logout" onclick="Logout()"></button>
+    </div>
+    <div id="login" class="">
+        <span>请登录</span>
+        <input type="text" id="server_ip" value="127.0.0.1" placeholder="请输入服务器IP">
+        <input type="text" id="server_port" value="7778" placeholder="请输入服务器端口">
+        <input type="text" id="username" value="server" placeholder="请输入用户名">
+        <input type="password" id="password" value="" placeholder="请输入密码">
+        <input type="submit" name="" value="登录" onclick="login_()">
+    </div>
+
+    <script>
+        var userSaveTime = 10;  //用户登录状态保存时长  分钟
+        var maxLines = 300;     //输出区最长保存多上行，超出后清空
+        var lindEnd = "\r";
+    </script>
+    <!-- 定义函数 -->
+    <script>
+        function setCookie(name,value){
+            localStorage.setItem(name, JSON.stringify(value));
+            localStorage.setItem(name+"_set", Date.now()); 
+        }
+        function getCookie(name){
+            var value = localStorage.getItem(name);
+            var setTime = localStorage.getItem(name+"_set");
+            if(value && setTime && Date.now() - setTime < userSaveTime*60*1000){
+                return JSON.parse(value);
+            }else{
+                return null;
+                localStorage.removeItem(name);
+                localStorage.removeItem(name+"_set");
+            }
+        }
+        function clearCookie(){
+            localStorage.clear();
+        }
+    </script>
+
+    <script language="javascript" type="text/javascript">  
+        //var wsUri ="ws://127.0.0.1:7778"; 
+        var output, input, lastP, server = null, websocket; 
+        var login = false; 
+        var colorReg = /%([0-9]+)%/;
+        var colorReplaceReg = /%[0-9]+%/g;
+        var splitReg = /(%[0-9]+%)(.+)/g;
+        var percentReg = /([0-9]+) %/;
+        var clearReg = /Terraria服务器 v1.3.1.1/;
+        var commandLists = [],currentCommandIndex=0;
+
+        var lines = 0;
+        var PacketType = {
+            Authenticate: 0,
+            Disconnect: 1,
+            Input: 2,
+            Message: 3,  
+            MessageBuffer: 4,
+        }
+        var ConsoleColor = [
+            "Black",
+            "DarkBlue",
+            "DarkGreen",
+            "DarkCyan",//3
+            "DarkRed",
+            "DarkMagenta",
+            "DarkYellow",
+            "Gray",//7
+            "DarkGray",
+            "Blue",
+            "Green",
+            "Cyan",//11
+            "Red",
+            "Magenta",
+            "Yellow",
+            "White5"
+        ]
+
+        function init() { 
+            output = document.getElementById("output"); 
+            input = document.getElementById("input"); 
+            server = getCookie("wsrc_server");
+            if(server){
+                reset();
+                login = true;
+            }
+            if(!login){
+                document.getElementById("main").style.display = "none";
+                document.getElementById("login").style.display = "block";
+                document.getElementById("login").style.opacity = "1";
+            }else{
+                document.getElementById("login").style.display = "none";
+                document.getElementById("main").style.display = "block";
+            }
+            Clear();
+        }
+        function login_(){
+            server = {};
+            var user;
+            server.ip = document.getElementById("server_ip").value;
+            server.port = document.getElementById("server_port").value;
+            server.username = document.getElementById("username").value;
+            server.password = document.getElementById("password").value;
+            if(server.ip == "" || server.username == ""){
+                alert("服务器IP和用户名不能为空!");
+                return false;
+            }
+            reset();
+            document.getElementById("login").style.opacity = "0";
+            document.getElementById("main").style.opacity = "1";
+            document.getElementById("main").style.display = "block";
+            window.setTimeout(function(){
+                document.getElementById("login").style.display = "none";
+            }, 500);
+            setCookie("wsrc_server", server);
+            return true;
+        }
+        function reset() { 
+            lastP = null;
+            var wsUri = "ws://" + server.ip + ":" + server.port;
+            websocket = new WebSocket(wsUri); 
+            websocket.connected = false;
+            websocket.onopen = function(evt) { 
+                onOpen(evt) 
+            }; 
+            websocket.onclose = function(evt) { 
+                onClose(evt) 
+            }; 
+            websocket.onmessage = function(evt) { 
+                onMessage(evt) 
+            }; 
+            websocket.onerror = function(evt) { 
+                onError(evt) 
+            };
+            writeToScreen("%2%尝试连接服务器!"); 
+            setTimeout(function(){
+                if(!websocket.connected){
+                    writeToScreen("%2%连接超时，请重试!");
+                    localStorage.removeItem("wsrc_server");
+                    localStorage.removeItem("wsrc_server_set");
+                    init();
+                }
+            }, 5000);
+        }
+        function onOpen(evt) { 
+            websocket.connected = true;
+            writeToScreen("%2%已连接服务器！");
+            doSend({
+                Command: "",
+                type: PacketType.Authenticate,
+                UserName: server.username,
+                Password: server.password
+            }); 
+        }  
+    
+        function onClose(evt) { 
+            writeToScreen("%12%远程主机连接已关闭!");
+            back();
+        }  
+    
+        function onMessage(evt) { 
+            var res = JSON.parse(evt.data);
+            writeToScreen(res.Command);
+            if(res.type == PacketType.Disconnect){
+                back();
+            }
+        }  
+    
+        function onError(evt) { 
+            writeToScreen('%12%'+ evt.data); 
+            back();
+        }  
+    
+        function doSend(message) { 
+            if(message.Command){
+                writeToScreen(": " + message.Command);  
+            }
+            websocket.send(JSON.stringify(message)); 
+        }  
+    
+        function writeToScreen(message) {window.message=message;
+            if(clearReg.test(message) || lines > maxLines){
+                Clear();
+                lines = 0;
+            }
+            var index=-1;
+            var color = "White";
+            var messageArr = message.match(splitReg);
+            for(var i in messageArr){
+                if(messageArr[i].indexOf("平衡液体...") > -1 || messageArr[i].indexOf("重置游戏对象...") > -1){
+                    //continue;
+                    console.log(messageArr[i]);
+                }
+                var pre = document.createElement("p"); 
+                pre.style.wordWrap = "break-word"; 
+                var match = colorReg.exec(messageArr[i]);
+                if(match&&match[1]){
+                    color = ConsoleColor[match[1]];
+                }
+                pre.style.color = color;
+                messageArr[i] = messageArr[i].replace(colorReplaceReg, "");
+                pre.innerHTML = messageArr[i];
+                if(messageArr[i].length < 2 ){
+                    continue;
+                }
+                var percentMatch = percentReg.exec(messageArr[i]);
+                if(percentMatch&&percentMatch[1]){
+                    output.removeChild(output.lastChild);
+                    pre.innerHTML = "";
+                    for(var i=0;i<percentMatch[1]/4;i++){
+                        pre.innerHTML += ".";
+                    }
+                    pre.innerHTML += percentMatch[0];
+                }
+                output.appendChild(pre); 
+                
+                lines++;
+            }
+            output.scrollTop = output.scrollHeight
+        }  
+        function AddToCommandList(command){
+            if(commandLists.length > 20){
+                commandLists.pop();
+            }
+            commandLists.unshift(command);
+        }
+        /*function CommandChange(){
+            var command = input.value;
+            commandLists.map(function(cmd){
+
+            })
+        }*/
+        function PreCommand(event){
+            if(commandLists.length > currentCommandIndex){
+                input.value = commandLists[currentCommandIndex];
+                currentCommandIndex++;
+            }
+            event.preventDefault();
+        }
+        function NextCommand(event){
+            if(currentCommandIndex == commandLists.length){
+                currentCommandIndex--;
+            }
+            if(currentCommandIndex > 0){
+                input.value = commandLists[currentCommandIndex-1];
+                currentCommandIndex--;
+            }else{
+                input.value = "";
+            }
+            event.preventDefault();
+        }
+        function Send(){
+            var command = input.value;
+            if(command == ""){
+                command = "";
+            }
+            AddToCommandList(command);
+            doSend({
+                Command: command,
+                type: PacketType.Input,
+                UserName: "server",
+                Password: ""
+            });
+            input.value = "";
+            currentCommandIndex = 0;
+        }
+        function Clear(){
+            output.innerHTML = "";
+        }
+        function Logout(){
+            clearCookie();
+            back(0);console.dir(server);
+            websocket.close();
+        }
+        function back(delay){
+            delay = delay||600;
+            setTimeout(function(){
+                document.getElementById("login").style.display = "block";
+                document.getElementById("login").style.opacity = "1";
+                document.getElementById("main").style.opacity = "0";
+                window.setTimeout(function(){
+                    document.getElementById("main").style.display = "none";
+                    Clear();
+                }, 500);
+            }, delay);
+        }
+        window.addEventListener("load", init, false);  
+
+        console.log("如果你使用 mono 运行， 且想看到不同颜色， 请设置以下变量: ");
+        console.log("   export TERM=xterm-color");
+    </script>
+</body>
+
+</html>
