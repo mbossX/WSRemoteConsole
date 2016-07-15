@@ -1,13 +1,3 @@
-#忽略gitignore文件  
-#.gitignore
-
-#index.[html,js,css]
-index.*
-
-#Fleck
-#Fleck-master
-
-# C-sharp
 bin
 obj
 build
