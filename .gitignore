@@ -1,11 +1,12 @@
 #忽略gitignore文件  
-#.gitignore
+.gitignore
+.git
 
 #index.[html,js,css]
 index.*
 
 #Fleck
-#Fleck-master
+Fleck-master
 
 # C-sharp
 bin
